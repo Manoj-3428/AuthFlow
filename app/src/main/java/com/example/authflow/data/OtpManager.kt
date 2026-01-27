@@ -90,6 +90,16 @@ class OtpManager {
         }
     }
     
+    suspend fun getCurrentOtp(email: String): String? {
+        mutex.withLock {
+            val otpData = otpMap[email] ?: return null
+            if (System.currentTimeMillis() > otpData.expiryTimeMillis) {
+                return null
+            }
+            return otpData.code
+        }
+    }
+    
     private fun generateRandomOtp(): String {
         return (100000..999999).random().toString()
     }

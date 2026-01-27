@@ -45,8 +45,8 @@ class AuthViewModel(
         
         viewModelScope.launch {
             currentEmail = email
-            otpManager.generateOtp(email)
-            _state.update { AuthState.OtpSent(email, 60) }
+            val otpCode = otpManager.generateOtp(email)
+            _state.update { AuthState.OtpSent(email, 60, otpCode) }
             startOtpCountdown(email)
         }
     }
@@ -56,9 +56,10 @@ class AuthViewModel(
         if (otp.length != 6) return
         
         viewModelScope.launch {
+            val currentOtp = otpManager.getCurrentOtp(email) ?: ""
+            val remaining = otpManager.getRemainingTimeSeconds(email) ?: 0
             _state.update { 
-                val remaining = otpManager.getRemainingTimeSeconds(email) ?: 0
-                AuthState.OtpVerifying(email, remaining)
+                AuthState.OtpVerifying(email, remaining, currentOtp)
             }
             
             val result = otpManager.validateOtp(email, otp)
@@ -78,10 +79,12 @@ class AuthViewModel(
                 }
                 is OtpValidationResult.Incorrect -> {
                     val remaining = otpManager.getRemainingTimeSeconds(email) ?: 0
+                    val currentOtp = otpManager.getCurrentOtp(email)
                     _state.update { 
                         AuthState.OtpError(
                             email = email,
-                            errorType = OtpErrorType.Incorrect
+                            errorType = OtpErrorType.Incorrect,
+                            otpCode = currentOtp
                         )
                     }
                     if (remaining > 0) {
@@ -125,8 +128,8 @@ class AuthViewModel(
             if (canResend) {
                 otpCountdownJob?.cancel()
                 otpManager.clearOtp(email)
-                otpManager.generateOtp(email)
-                _state.update { AuthState.OtpSent(email, 60) }
+                val otpCode = otpManager.generateOtp(email)
+                _state.update { AuthState.OtpSent(email, 60, otpCode) }
                 startOtpCountdown(email)
             }
         }
@@ -164,10 +167,12 @@ class AuthViewModel(
                 val actualRemaining = otpManager.getRemainingTimeSeconds(email)
                 if (actualRemaining == null || actualRemaining <= 0) {
                     if (currentState is AuthState.OtpSent || currentState is AuthState.OtpVerifying) {
+                        val currentOtp = (currentState as? AuthState.OtpSent)?.otpCode ?: (currentState as? AuthState.OtpVerifying)?.otpCode ?: ""
                         _state.update {
                             AuthState.OtpError(
                                 email = email,
-                                errorType = OtpErrorType.Expired
+                                errorType = OtpErrorType.Expired,
+                                otpCode = if (currentOtp.isNotEmpty()) currentOtp else null
                             )
                         }
                     }

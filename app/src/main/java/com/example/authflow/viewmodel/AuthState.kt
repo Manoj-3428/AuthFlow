@@ -5,18 +5,21 @@ sealed class AuthState {
     
     data class OtpSent(
         val email: String,
-        val remainingSeconds: Long
+        val remainingSeconds: Long,
+        val otpCode: String
     ) : AuthState()
     
     data class OtpVerifying(
         val email: String,
-        val remainingSeconds: Long
+        val remainingSeconds: Long,
+        val otpCode: String
     ) : AuthState()
     
     data class OtpError(
         val email: String,
         val errorType: OtpErrorType,
-        val remainingAttempts: Int? = null
+        val remainingAttempts: Int? = null,
+        val otpCode: String? = null
     ) : AuthState()
     
     data class SessionActive(
