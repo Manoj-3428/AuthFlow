@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1069302655996",
+    "project_id": "msgsender-28364",
+    "storage_bucket": "msgsender-28364.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069302655996:android:d130856c77d3977953e079",
+        "android_client_info": {
+          "package_name": "com.example.authflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCifVJFukOyVc1GNVZOxm0pMP5IBwfF9iM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069302655996:android:b7e92d3031cb0f3253e079",
+        "android_client_info": {
+          "package_name": "com.example.msgsender"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCifVJFukOyVc1GNVZOxm0pMP5IBwfF9iM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
