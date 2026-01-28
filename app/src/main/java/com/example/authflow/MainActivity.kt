@@ -11,16 +11,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.authflow.analytics.AnalyticsLogger
 import com.example.authflow.ui.LoginScreen
 import com.example.authflow.ui.OtpScreen
 import com.example.authflow.ui.SessionScreen
 import com.example.authflow.ui.theme.AuthFlowTheme
 import com.example.authflow.viewmodel.AuthState
 import com.example.authflow.viewmodel.AuthViewModel
+import com.google.firebase.analytics.FirebaseAnalytics
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize AnalyticsLogger
+        AnalyticsLogger.initialize(this)
+        
+        // Enable Firebase Analytics debug mode for development
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
+        
         enableEdgeToEdge()
         setContent {
             AuthFlowTheme {

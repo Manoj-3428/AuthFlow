@@ -2,6 +2,7 @@ package com.example.authflow.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.authflow.analytics.AnalyticsLogger
 import com.example.authflow.data.OtpManager
 import com.example.authflow.data.OtpValidationResult
 import kotlinx.coroutines.Job
@@ -47,6 +48,7 @@ class AuthViewModel(
             currentEmail = email
             val otpCode = otpManager.generateOtp(email)
             _state.update { AuthState.OtpSent(email, 60, otpCode) }
+            AnalyticsLogger.getInstance().logOtpSent(email)
             startOtpCountdown(email)
         }
     }
@@ -75,6 +77,8 @@ class AuthViewModel(
                             sessionDurationSeconds = 0
                         )
                     }
+                    AnalyticsLogger.getInstance().logOtpVerified(email)
+                    AnalyticsLogger.getInstance().logSessionStarted(email)
                     startSessionTimer()
                 }
                 is OtpValidationResult.Incorrect -> {
@@ -87,6 +91,7 @@ class AuthViewModel(
                             otpCode = currentOtp
                         )
                     }
+                    AnalyticsLogger.getInstance().logOtpVerificationFailed(email, "Incorrect")
                     if (remaining > 0) {
                         startOtpCountdown(email)
                     }
@@ -98,6 +103,7 @@ class AuthViewModel(
                             errorType = OtpErrorType.Expired
                         )
                     }
+                    AnalyticsLogger.getInstance().logOtpExpired(email)
                 }
                 is OtpValidationResult.MaxAttemptsExceeded -> {
                     otpCountdownJob?.cancel()
@@ -107,6 +113,7 @@ class AuthViewModel(
                             errorType = OtpErrorType.MaxAttemptsExceeded
                         )
                     }
+                    AnalyticsLogger.getInstance().logMaxAttemptsExceeded(email, 3)
                 }
                 is OtpValidationResult.NotFound -> {
                     _state.update { 
@@ -115,6 +122,7 @@ class AuthViewModel(
                             errorType = OtpErrorType.NotFound
                         )
                     }
+                    AnalyticsLogger.getInstance().logOtpVerificationFailed(email, "NotFound")
                 }
             }
         }
@@ -130,6 +138,7 @@ class AuthViewModel(
                 otpManager.clearOtp(email)
                 val otpCode = otpManager.generateOtp(email)
                 _state.update { AuthState.OtpSent(email, 60, otpCode) }
+                AnalyticsLogger.getInstance().logOtpResent(email)
                 startOtpCountdown(email)
             }
         }
@@ -138,10 +147,17 @@ class AuthViewModel(
     private fun logout() {
         sessionTimerJob?.cancel()
         otpCountdownJob?.cancel()
+        val email = currentEmail
+        val duration = sessionStartTime?.let { (System.currentTimeMillis() - it) / 1000 } ?: 0L
         currentEmail = null
         sessionStartTime = null
         viewModelScope.launch {
-            currentEmail?.let { otpManager.clearOtp(it) }
+            email?.let {
+                otpManager.clearOtp(it)
+                if (duration > 0) {
+                    AnalyticsLogger.getInstance().logSessionEnded(it, duration)
+                }
+            }
         }
         _state.update { AuthState.EmailInput }
     }
@@ -175,6 +191,7 @@ class AuthViewModel(
                                 otpCode = if (currentOtp.isNotEmpty()) currentOtp else null
                             )
                         }
+                        AnalyticsLogger.getInstance().logOtpExpired(email)
                     }
                     break
                 }
