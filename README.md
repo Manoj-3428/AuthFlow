@@ -1,3 +1,9 @@
+![auth1](https://github.com/user-attachments/assets/7797ee6b-12b7-4fb1-ab12-4ad26e25b787)
+![auth2](https://github.com/user-attachments/assets/2a386007-3b5b-4c0d-ba25-6e18e6151167)
+![auth3](https://github.com/user-attachments/assets/4636c6ba-b902-4b94-b128-6ab3b1adf333)
+![auth4](https://github.com/user-attachments/assets/1e690aa1-1ae9-422a-b044-9c17722f4030)
+![auth5](https://github.com/user-attachments/assets/93cd8d16-6688-4466-a750-5e53c9d496b7)
+
 # AuthFlow - Passwordless Authentication App
 
 A passwordless authentication Android application built with Jetpack Compose, implementing Email + OTP login flow with session tracking.
