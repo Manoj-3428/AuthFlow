@@ -199,9 +199,9 @@ app/src/main/java/com/example/authflow/
 ### What I Used GPT For:
 1. **Initial Project Setup**: Getting started with Jetpack Compose structure
 2. **Firebase Analytics Integration**: Understanding initialization and event logging
-3. **Material 3 Components**: Learning TopAppBar, Scaffold usage
-4. **Compose Best Practices**: Understanding remember, LaunchedEffect patterns
-5. **Code Fixes**: Resolving compilation errors and type mismatches
+3. **Code Fixes**: Resolving compilation errors and type mismatches
+
+
 
 ### What I Understood and Implemented Myself:
 1. **OTP Manager Logic**: 
