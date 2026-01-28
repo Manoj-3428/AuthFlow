@@ -22,7 +22,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import android.os.Handler
+import android.os.Looper
 import com.example.authflow.R
 import com.example.authflow.viewmodel.AuthEvent
 import com.example.authflow.viewmodel.AuthState
@@ -41,8 +44,13 @@ fun OtpScreen(
     var showErrorState by remember { mutableStateOf(false) }
     var lastOtpLength by remember { mutableStateOf(0) }
     val focusRequesters = remember { List(6) { FocusRequester() } }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    
+    fun showQuickToast(message: String) {
+        val toast = Toast.makeText(context, message, Toast.LENGTH_SHORT)
+        toast.show()
+        Handler(Looper.getMainLooper()).postDelayed({ toast.cancel() }, 1500)
+    }
 
     val email = when (state) {
         is AuthState.OtpSent -> state.email
@@ -98,23 +106,31 @@ fun OtpScreen(
             is AuthState.OtpError -> {
                 when (state.errorType) {
                     OtpErrorType.Incorrect -> {
+                        otp = ""
                         showErrorState = true
-                        snackbarHostState.showSnackbar("Not verified")
+                        focusRequesters[0].requestFocus()
+                        showQuickToast("Not verified")
                     }
 
                     OtpErrorType.Expired -> {
+                        otp = ""
                         showErrorState = false
-                        snackbarHostState.showSnackbar("OTP has expired. Please resend.")
+                        focusRequesters[0].requestFocus()
+                        showQuickToast("OTP has expired. Please resend.")
                     }
 
                     OtpErrorType.MaxAttemptsExceeded -> {
+                        otp = ""
                         showErrorState = false
-                        snackbarHostState.showSnackbar("Maximum attempts exceeded. Please resend OTP.")
+                        focusRequesters[0].requestFocus()
+                        showQuickToast("Maximum attempts exceeded. Please resend OTP.")
                     }
 
                     OtpErrorType.NotFound -> {
+                        otp = ""
                         showErrorState = false
-                        snackbarHostState.showSnackbar("OTP not found. Please resend.")
+                        focusRequesters[0].requestFocus()
+                        showQuickToast("OTP not found. Please resend.")
                     }
                 }
             }
@@ -309,9 +325,7 @@ fun OtpScreen(
                             showErrorState = false
                             viewModel.handleEvent(AuthEvent.ResendOtp)
                             focusRequesters[0].requestFocus()
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Resending OTP...")
-                            }
+                            showQuickToast("Resending OTP...")
                         },
                         enabled = canResend,
                         modifier = Modifier
@@ -335,17 +349,14 @@ fun OtpScreen(
 
                     Button(
                         onClick = {
-                            coroutineScope.launch {
-                                if (otp.length == 6) {
-                                    if (showErrorState) {
-                                        snackbarHostState.showSnackbar("Not verified")
-                                    } else {
-                                        viewModel.handleEvent(AuthEvent.VerifyOtp(otp))
-                                        snackbarHostState.showSnackbar("Verifying OTP...")
-                                    }
+                            if (otp.length == 6) {
+                                if (showErrorState) {
+                                    showQuickToast("Not verified")
                                 } else {
-                                    snackbarHostState.showSnackbar("Please enter 6-digit OTP")
+                                    viewModel.handleEvent(AuthEvent.VerifyOtp(otp))
                                 }
+                            } else {
+                                showQuickToast("Please enter 6-digit OTP")
                             }
                         },
                         enabled = otp.length == 6 && state !is AuthState.OtpVerifying,
@@ -375,11 +386,6 @@ fun OtpScreen(
                     }
                 }
             }
-            
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
     }
 }

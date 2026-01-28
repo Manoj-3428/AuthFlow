@@ -58,8 +58,17 @@ class AuthViewModel(
         if (otp.length != 6) return
         
         viewModelScope.launch {
-            val currentOtp = otpManager.getCurrentOtp(email) ?: ""
-            val remaining = otpManager.getRemainingTimeSeconds(email) ?: 0
+            val currentState = _state.value
+            val (remaining, currentOtp) = when (currentState) {
+                is AuthState.OtpSent -> currentState.remainingSeconds to currentState.otpCode
+                is AuthState.OtpVerifying -> currentState.remainingSeconds to currentState.otpCode
+                is AuthState.OtpError -> {
+                    val otpCode = currentState.otpCode ?: ""
+                    0L to otpCode
+                }
+                else -> 0L to ""
+            }
+            
             _state.update { 
                 AuthState.OtpVerifying(email, remaining, currentOtp)
             }
@@ -77,22 +86,26 @@ class AuthViewModel(
                             sessionDurationSeconds = 0
                         )
                     }
-                    AnalyticsLogger.getInstance().logOtpVerified(email)
-                    AnalyticsLogger.getInstance().logSessionStarted(email)
+                    launch {
+                        AnalyticsLogger.getInstance().logOtpVerified(email)
+                        AnalyticsLogger.getInstance().logSessionStarted(email)
+                    }
                     startSessionTimer()
                 }
                 is OtpValidationResult.Incorrect -> {
-                    val remaining = otpManager.getRemainingTimeSeconds(email) ?: 0
-                    val currentOtp = otpManager.getCurrentOtp(email)
+                    val remainingAfter = otpManager.getRemainingTimeSeconds(email) ?: 0
+                    val currentOtpAfter = otpManager.getCurrentOtp(email)
                     _state.update { 
                         AuthState.OtpError(
                             email = email,
                             errorType = OtpErrorType.Incorrect,
-                            otpCode = currentOtp
+                            otpCode = currentOtpAfter
                         )
                     }
-                    AnalyticsLogger.getInstance().logOtpVerificationFailed(email, "Incorrect")
-                    if (remaining > 0) {
+                    launch {
+                        AnalyticsLogger.getInstance().logOtpVerificationFailed(email, "Incorrect")
+                    }
+                    if (remainingAfter > 0) {
                         startOtpCountdown(email)
                     }
                 }
@@ -103,7 +116,9 @@ class AuthViewModel(
                             errorType = OtpErrorType.Expired
                         )
                     }
-                    AnalyticsLogger.getInstance().logOtpExpired(email)
+                    launch {
+                        AnalyticsLogger.getInstance().logOtpExpired(email)
+                    }
                 }
                 is OtpValidationResult.MaxAttemptsExceeded -> {
                     otpCountdownJob?.cancel()
@@ -113,7 +128,9 @@ class AuthViewModel(
                             errorType = OtpErrorType.MaxAttemptsExceeded
                         )
                     }
-                    AnalyticsLogger.getInstance().logMaxAttemptsExceeded(email, 3)
+                    launch {
+                        AnalyticsLogger.getInstance().logMaxAttemptsExceeded(email, 3)
+                    }
                 }
                 is OtpValidationResult.NotFound -> {
                     _state.update { 
@@ -122,7 +139,9 @@ class AuthViewModel(
                             errorType = OtpErrorType.NotFound
                         )
                     }
-                    AnalyticsLogger.getInstance().logOtpVerificationFailed(email, "NotFound")
+                    launch {
+                        AnalyticsLogger.getInstance().logOtpVerificationFailed(email, "NotFound")
+                    }
                 }
             }
         }
@@ -188,7 +207,7 @@ class AuthViewModel(
                             AuthState.OtpError(
                                 email = email,
                                 errorType = OtpErrorType.Expired,
-                                otpCode = if (currentOtp.isNotEmpty()) currentOtp else null
+                                otpCode = currentOtp.ifEmpty { null }
                             )
                         }
                         AnalyticsLogger.getInstance().logOtpExpired(email)

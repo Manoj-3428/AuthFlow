@@ -77,8 +77,9 @@ fun LoginScreen(
                 label = { Text("Email", color = Color.Black) },
                 placeholder = { Text("Enter your email", color = Color.Black.copy(alpha = 0.5f)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFF30364F),
                     unfocusedBorderColor = Color(0xFF30364F).copy(alpha = 0.5f),
